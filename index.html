@@ -1,37 +1,100 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚛️ QUANTICORD NEXUS — Proyecto $QCN</title>
-    <meta name="description" content="Ecosistema Ético-Cuántico Descentralizado impulsado por el Token $QCN">
-    <meta name="keywords" content="quanticord, nexus, crypto, blockchain, quantum, $QCN">
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <div id="portal">
-        <h1 class="title">⚛️ QUANTICORD NEXUS</h1>
-        <p class="subtitle">Ecosistema Ético-Cuántico Descentralizado — Proyecto $QCN</p>
-        <button id="activate">ACTIVAR NEXUS</button>
-        <p id="status"></p>
+# ETHOS-7 CORE - Núcleo Ético
+class EthicalEngine:
+    def __init__(self):
+        self.memory = EthicalMemory()
+        self.judgment = MoralCalculus()
+    
+    def resolve(self, dilemma):
+        """Resuelve dilemas éticos con memoria histórica"""
+        precedent = self.memory.check_similarity(dilemma)
+        verdict = self.judgment.weigh(dilemma, precedent)
+        self.memory.record(verdict)
+        return verdict# app.py - Backend Flask
+from flask import Flask, jsonify, request, render_template
+import sqlite3
+import json
+from datetime import datetime
+
+app = Flask(__name__)
+
+# Base de datos para memoria ética
+def init_db():
+    conn = sqlite3.connect('ethical_memory.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS decisions
+                 (id INTEGER PRIMARY KEY, 
+                  dilemma TEXT, 
+                  decision TEXT,
+                  reasoning TEXT,
+                  timestamp DATETIME)''')
+    conn.commit()
+    conn.close()
+
+# Motor ético simple pero funcional
+class EthicalEngine:
+    def analyze_dilemma(self, dilemma):
+        # Lógica ética real - no decorado
+        factors = {
+            'human_lives': dilemma.count('vida'),
+            'autonomy': dilemma.count('libertad'),
+            'utility': dilemma.count('beneficio'),
+            'rights': dilemma.count('derecho')
+        }
         
-        <!-- Información del Token -->
-        <div class="token-info">
-            <h3>Token Contract Address</h3>
-            <p class="contract-address">83dxm6jSYEmhRuQNdz8PHwzGmrnsBFmUhD4152K4Fray</p>
-            <div class="links">
-                <a href="#" id="explorer-link">Ver en Explorer</a>
-                <a href="#" id="chart-link">Ver Gráficos</a>
-            </div>
-        </div>
-    </div>
+        # Decision basada en pesos éticos
+        if factors['human_lives'] > 0:
+            return "PROTEGER VIDAS HUMANAS", "El valor de la vida humana prevalece sobre otros considerandos"
+        elif factors['autonomy'] > factors['utility']:
+            return "DEFENDER AUTONOMÍA", "La libertad individual tiene prioridad ética"
+        else:
+            return "MAXIMIZAR BIENESTAR", "El beneficio colectivo determina la acción correcta"
 
-    <div class="particles-container" id="particles"></div>
+engine = EthicalEngine()
 
-    <footer>
-        <p>© 2025 R-M-P • QUANTICORD NEXUS CORE v3.0 — Manifesto Ético-Cuántico</p>
-    </footer>
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-    <script src="script.js"></script>
-</body>
-</html>
+@app.route('/api/analyze', methods=['POST'])
+def analyze():
+    dilemma = request.json.get('dilema')
+    
+    if not dilemma:
+        return jsonify({'error': 'Dilema requerido'}), 400
+    
+    # Procesamiento real
+    decision, reasoning = engine.analyze_dilemma(dilemma)
+    
+    # Guardar en memoria
+    conn = sqlite3.connect('ethical_memory.db')
+    c = conn.cursor()
+    c.execute("INSERT INTO decisions (dilemma, decision, reasoning, timestamp) VALUES (?, ?, ?, ?)",
+              (dilemma, decision, reasoning, datetime.now()))
+    conn.commit()
+    conn.close()
+    
+    return jsonify({
+        'decision': decision,
+        'reasoning': reasoning,
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/api/memory')
+def get_memory():
+    conn = sqlite3.connect('ethical_memory.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM decisions ORDER BY timestamp DESC LIMIT 10")
+    decisions = c.fetchall()
+    conn.close()
+    
+    return jsonify([{
+        'id': d[0],
+        'dilemma': d[1],
+        'decision': d[2],
+        'reasoning': d[3],
+        'timestamp': d[4]
+    } for d in decisions])
+
+if __name__ == '__main__':
+    init_db()
+    app.run(host='0.0.0.0', port=5000, debug=True)
